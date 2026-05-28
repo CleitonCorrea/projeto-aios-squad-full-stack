@@ -1,0 +1,132 @@
+name: aiox-infra
+
+services:
+  user-db:
+    image: postgres:16-alpine
+    container_name: aiox-user-db
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_DB: ${USER_DB_NAME}
+      POSTGRES_USER: ${USER_DB_USER}
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
+    ports:
+      - "${USER_DB_PORT}:5432"
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER} -d ${USER_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - aiox-network
+
+  product-db:
+    image: postgres:16-alpine
+    container_name: aiox-product-db
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_DB: ${PRODUCT_DB_NAME}
+      POSTGRES_USER: ${PRODUCT_DB_USER}
+      POSTGRES_PASSWORD: ${PRODUCT_DB_PASSWORD}
+    ports:
+      - "${PRODUCT_DB_PORT}:5432"
+    volumes:
+      - product_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PRODUCT_DB_USER} -d ${PRODUCT_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - aiox-network
+
+  notification-db:
+    image: postgres:16-alpine
+    container_name: aiox-notification-db
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_DB: ${NOTIFICATION_DB_NAME}
+      POSTGRES_USER: ${NOTIFICATION_DB_USER}
+      POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
+    ports:
+      - "${NOTIFICATION_DB_PORT}:5432"
+    volumes:
+      - notification_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${NOTIFICATION_DB_USER} -d ${NOTIFICATION_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - aiox-network
+
+  rabbitmq:
+    image: rabbitmq:4.0-management
+    container_name: aiox-rabbitmq
+    env_file:
+      - ./.env
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - "${RABBITMQ_AMQP_PORT}:5672"
+      - "${RABBITMQ_MGMT_PORT}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - aiox-network
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: aiox-mailhog
+    ports:
+      - "${MAILHOG_SMTP_PORT}:1025"
+      - "${MAILHOG_UI_PORT}:8025"
+    networks:
+      - aiox-network
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: aiox-prometheus
+    volumes:
+      - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "${PROMETHEUS_PORT}:9090"
+    networks:
+      - aiox-network
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: aiox-grafana
+    env_file:
+      - ./.env
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - aiox-network
+
+volumes:
+  user_db_data:
+  product_db_data:
+  notification_db_data:
+  rabbitmq_data:
+  grafana_data:
+
+networks:
+  aiox-network:
+    name: aiox-network
+    driver: bridge
