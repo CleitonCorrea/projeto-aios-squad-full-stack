@@ -1,0 +1,43 @@
+name: aiox-backend
+
+services:
+  user-api:
+    build:
+      context: ./user-api
+      dockerfile: Dockerfile
+    container_name: aiox-user-api
+    env_file:
+      - ./.env
+    ports:
+      - "${USER_API_PORT}:8080"
+    networks:
+      - aiox-network
+
+  product-api:
+    build:
+      context: ./product-api
+      dockerfile: Dockerfile
+    container_name: aiox-product-api
+    env_file:
+      - ./.env
+    ports:
+      - "${PRODUCT_API_PORT}:8080"
+    networks:
+      - aiox-network
+
+  notification-api:
+    build:
+      context: ./notification-api
+      dockerfile: Dockerfile
+    container_name: aiox-notification-api
+    env_file:
+      - ./.env
+    ports:
+      - "${NOTIFICATION_API_PORT}:8080"
+    networks:
+      - aiox-network
+
+networks:
+  aiox-network:
+    external: true
+    name: aiox-network
